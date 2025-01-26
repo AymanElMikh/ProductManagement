@@ -24,8 +24,17 @@ import java.math.BigDecimal;
 import static java.math.RoundingMode.HALF_UP;
 
 /**
- * @author AymanElMikh
- **/
+ * {@code Product} class represents properties and behaviors of
+ * product objects in the Product Management System.
+ * <br>
+ * Each product has an id, name, and price
+ * <br>
+ * Each product can have a discount, calculated based on a
+ * {@link DISCOUNT_RATE discount rate}
+ * @version 1.0
+ * @author Ayman ElMikh
+ */
+
 public class Product {
 
     public static final BigDecimal DISCOUNT_RATE = BigDecimal.valueOf(0.1);
@@ -67,6 +76,16 @@ public class Product {
                 '}';
     }
 
+    /**
+     * Calculates and returns the discount for the product.
+     * <p>
+     * The discount is calculated by multiplying the product's price with the
+     * {@code DISCOUNT_RATE}. The result is rounded to two decimal places using
+     * the {@code HALF_UP} rounding mode.
+     * </p>
+     *
+     * @return the discount amount as a {@code BigDecimal}, rounded to two decimal places
+     */
     public BigDecimal getDiscount(){
         return  price.multiply(DISCOUNT_RATE).setScale(2, HALF_UP);
     }
