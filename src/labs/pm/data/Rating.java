@@ -17,28 +17,27 @@
  *
  */
 
-package labs.pm.app;
-
-import labs.pm.data.Product;
-import labs.pm.data.Rating;
-
-import java.math.BigDecimal;
-
+package labs.pm.data;
 
 /**
- * {@code Shop} class represents an application that manages Products
- * @version 1.0
- * @author AymanElMikh
- */
-public class Shop {
-    public static void main(String[] args) {
-        Product p1 = new Product(1, "Shoes", BigDecimal.valueOf(131.2));
-        System.out.println(p1);
+@author AymanElMikh
+**/
+public enum Rating {
 
-        System.out.println("------------------------");
-        Product p2 = new Product(2, "Cake", BigDecimal.valueOf(11.2), Rating.FIVE_STAR);
-        System.out.println(p2);
+    NOT_RATED("\u2606\u2606\u2606\u2606\u2606"),
+    ONE_STAR("\u2605\u2606\u2606\u2606\u2606"),
+    TWO_STAR("\u2605\u2605\u2606\u2606\u2606"),
+    THREE_STAR("\u2605\u2605\u2605\u2606\u2606"),
+    FOUR_STAR("\u2605\u2605\u2605\u2605\u2606"),
+    FIVE_STAR("\u2605\u2605\u2605\u2605\u2605");
 
+    private final String stars;
+
+    Rating(String stars) {
+        this.stars = stars;
     }
 
+    public String getStars() {
+        return stars;
+    }
 }
