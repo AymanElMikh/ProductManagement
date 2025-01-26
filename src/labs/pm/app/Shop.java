@@ -11,9 +11,10 @@ public class Shop {
 
         p1.setId(1);
         p1.setName("Shoes");
-        p1.setPrice(BigDecimal.valueOf(121.2));
+        p1.setPrice(BigDecimal.valueOf(121.211));
 
         System.out.println(p1);
+        System.out.println(p1.getDiscount());
     }
 
 }
