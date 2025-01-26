@@ -1,9 +1,19 @@
 package labs.pm.app;
 
+import labs.pm.data.Product;
+
+import java.math.BigDecimal;
 
 public class Shop {
     public static void main(String[] args) {
-        System.out.printf("Hello and welcome!");
+
+        Product p1 = new Product();
+
+        p1.setId(1);
+        p1.setName("Shoes");
+        p1.setPrice(BigDecimal.valueOf(121.2));
+
+        System.out.println(p1);
     }
 
 }
