@@ -27,12 +27,47 @@ import java.time.LocalDate;
  **/
 public class ProductManager {
 
-    public static Product createProduct(int id, String name, BigDecimal price, Rating rating, LocalDate bestBefore){
-        return new Food(id, name, price, rating, bestBefore);
+    private Product product;
+    private Review review;
+
+    public  Product createProduct(int id, String name, BigDecimal price, Rating rating, LocalDate bestBefore){
+
+        product = new Food(id, name, price, rating, bestBefore);
+
+        return product;
     }
 
-    public static Product createProduct(int id, String name, BigDecimal price, Rating rating){
-        return new Drink(id, name, price, rating);
+    public  Product createProduct(int id, String name, BigDecimal price, Rating rating){
+        product = new Drink(id, name, price, rating);
+
+        return product;
+    }
+
+
+    public Product reviewProduct(Product product, String comment,Rating rating){
+
+        review = new Review(rating, comment);
+        this.product = product.applyRating(review.rating());
+
+        return product;
+
+    }
+
+
+    public void printProductReport(){
+
+        StringBuilder txt = new StringBuilder();
+
+        txt.append(product);
+        txt.append("\n");
+
+        if(review != null) txt.append(review);
+        else txt.append("Not reviewed");
+
+        txt.append("\n");
+
+        System.out.println(txt);
+
     }
 
 }

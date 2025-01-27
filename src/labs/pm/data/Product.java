@@ -37,7 +37,7 @@ import static java.math.RoundingMode.HALF_UP;
  * @author Ayman ElMikh
  */
 
-public abstract class Product {
+public sealed abstract class Product permits Food, Drink{
 
     public static final BigDecimal DISCOUNT_RATE = BigDecimal.valueOf(0.1);
 

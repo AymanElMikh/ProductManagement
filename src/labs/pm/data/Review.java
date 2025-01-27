@@ -17,28 +17,10 @@
  *
  */
 
-package labs.pm.app;
-
-import labs.pm.data.*;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalTime;
-
+package labs.pm.data;
 
 /**
- * {@code Shop} class represents an application that manages Products
- * @version 1.0
  * @author AymanElMikh
- */
-public class Shop {
-    public static void main(String[] args) {
-
-        ProductManager productManager =  new ProductManager();
-
-        Product p1 = productManager.createProduct(1, "Bob", BigDecimal.valueOf(123.22), Rating.ONE_STAR, LocalDate.now());
-        productManager.reviewProduct(p1, "This is awesome", Rating.FIVE_STAR);
-        productManager.printProductReport();
-    }
-
+ **/
+public record Review(Rating rating, String comment) {
 }
