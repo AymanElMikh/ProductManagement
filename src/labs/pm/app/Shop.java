@@ -38,11 +38,11 @@ public class Shop {
         ProductManager productManager =  new ProductManager(Locale.US);
 
         Product p1 = productManager.createProduct(1, "Bob", BigDecimal.valueOf(123.22), Rating.NOT_RATED, LocalDate.now().plusMonths(3).plusDays(2));
-        Product p2 = productManager.createProduct(1, "Bob", BigDecimal.valueOf(123.22), Rating.NOT_RATED);
+
 
         productManager.reviewProduct(p1, "This is delicious food", Rating.FOUR_STAR);
-        productManager.printProductReport();
-        productManager.reviewProduct(p2, "This is cold drink", Rating.THREE_STAR);
+        productManager.reviewProduct(p1, "Hmmm delicious", Rating.FIVE_STAR);
+
         productManager.printProductReport();
     }
 
