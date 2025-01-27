@@ -22,5 +22,21 @@ package labs.pm.data;
 /**
  * @author AymanElMikh
  **/
-public record Review(Rating rating, String comments) {
+
+@FunctionalInterface
+public interface Rateable<T>{
+
+    public static final Rating DEFAULT_RATING = Rating.NOT_RATED;
+    public default Rating getRating(){
+        return DEFAULT_RATING;
+    }
+    public default T applyRating(int stars){
+        return applyRating(convert(stars));
+    }
+    public static Rating convert(int stars){
+        return (stars>=0 && stars<=5) ? Rating.values()[stars] : DEFAULT_RATING;
+    }
+
+    public T applyRating(Rating rating);
+
 }

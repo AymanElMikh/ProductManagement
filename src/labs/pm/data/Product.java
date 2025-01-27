@@ -37,7 +37,7 @@ import static java.math.RoundingMode.HALF_UP;
  * @author Ayman ElMikh
  */
 
-public sealed abstract class Product permits Food, Drink{
+public sealed abstract class Product implements Rateable<Product> permits Food, Drink{
 
     public static final BigDecimal DISCOUNT_RATE = BigDecimal.valueOf(0.1);
 
@@ -98,6 +98,7 @@ public sealed abstract class Product permits Food, Drink{
     }
 
     public abstract Product applyRating(final Rating newRating);
+
 
     @Override
     public String toString() {
