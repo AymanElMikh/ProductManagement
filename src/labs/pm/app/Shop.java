@@ -35,7 +35,7 @@ import java.util.Locale;
 public class Shop {
     public static void main(String[] args) {
 
-        ProductManager productManager =  new ProductManager(Locale.US);
+        ProductManager productManager =  new ProductManager("en-GB");
 
         Product p1 = productManager.createProduct(1, "Bob", BigDecimal.valueOf(123.22), Rating.NOT_RATED, LocalDate.now().plusMonths(3).plusDays(2));
 
@@ -46,6 +46,14 @@ public class Shop {
         productManager.reviewProduct(1, "Thank you so mush", Rating.TWO_STAR);
 
         productManager.printProductReport(1);
+
+        productManager.changeLocal("ru-RU");
+
+        productManager.printProductReport(1);
+
     }
+
+
+
 
 }

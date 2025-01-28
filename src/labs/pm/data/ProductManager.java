@@ -19,6 +19,7 @@
 
 package labs.pm.data;
 
+import javax.swing.text.NumberFormatter;
 import java.awt.dnd.DropTarget;
 import java.math.BigDecimal;
 import java.text.MessageFormat;
@@ -33,25 +34,68 @@ import java.util.*;
  **/
 public class ProductManager {
 
+    private static Map<String, ResourceFormatter> formatters =
+            Map.of("en-GB", new ResourceFormatter(Locale.UK),
+                    "en-US", new ResourceFormatter(Locale.US),
+                    "ru-RU", new ResourceFormatter(Locale.of("ru", "RU")),
+                    "fr-FR", new ResourceFormatter(Locale.FRANCE),
+                    "zh-CN", new ResourceFormatter(Locale.CHINA));
+
+    private ResourceFormatter formatter;
+
+    public static Set<String> getSupportedLocales(){
+        return formatters.keySet();
+    }
+
+    public void changeLocal(String languageTag){
+        formatter = formatters.getOrDefault(languageTag, formatters.get("en-GB"));
+    }
+
+    public ProductManager(String languageTag){
+        this.changeLocal(languageTag);
+    }
+
+    public ProductManager(Locale locale){
+        this(locale.toLanguageTag());
+    }
+
+    private static class ResourceFormatter{
+
+        private ResourceBundle resource;
+        private DateTimeFormatter dateFormat;
+        private NumberFormat moneyFormat;
+
+        public ResourceFormatter(Locale locale){
+            resource = ResourceBundle.getBundle("labs.pm.data.resources", locale);
+            dateFormat = DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).localizedBy(locale);
+            moneyFormat = NumberFormat.getCurrencyInstance(locale);
+        }
+
+        private String formatProduct(Product product){
+
+            String type = switch (product){
+                case Food food -> getText("food");
+                case Drink drink -> getText("drink");
+            };
+
+            return MessageFormat.format(getText("product"), product.getName(), moneyFormat.format(product.getPrice()),
+                    product.getRating().getStars(), dateFormat.format(product.getBestBefore()),type);
+        }
+
+        private String formatReview(Review review){
+
+            return MessageFormat.format(getText("review"),
+                    review.rating().getStars(), review.comments());
+        }
+
+        private String getText(String key){
+            return resource.getString(key);
+        }
+    }
 
     private Map<Product, List<Review>> products = new HashMap<>();
 
-    //private Product product;
-    //private Review[] reviews = new Review[5];
-    private final ResourceBundle resource;
-    private final DateTimeFormatter dateFormat;
-    private final NumberFormat moneyFormat;
-
-    public ProductManager(Locale locale){
-
-        resource = ResourceBundle.getBundle("labs.pm.data.resources", locale);
-        dateFormat = DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).localizedBy(locale);
-        moneyFormat = NumberFormat.getCurrencyInstance(locale);
-
-    }
-
     public Product createProduct(int id, String name, BigDecimal price, Rating rating, LocalDate bestBefore){
-
 
         Product product = new Food(id, name, price, rating, bestBefore);
         products.putIfAbsent(product, new ArrayList<Review>());
@@ -91,7 +135,8 @@ public class ProductManager {
     }
 
 
-        public Product findProduct(int id){
+    public Product findProduct(int id){
+
         Product result = null;
 
         for(Product product : products.keySet()){
@@ -115,29 +160,25 @@ public class ProductManager {
 
         StringBuilder txt = new StringBuilder();
 
-        String type = switch (product){
-            case Food food -> resource.getString("food");
-            case Drink drink -> resource.getString("drink");
-        };
-
-        txt.append(MessageFormat.format(resource.getString("product"), product.getName(), moneyFormat.format(product.getPrice()),
-                product.getRating().getStars(), dateFormat.format(product.getBestBefore()),type));
+        txt.append(formatter.formatProduct(product));
         txt.append("\n");
 
         for( Review review : reviews ) {
 
-            txt.append(MessageFormat.format(resource.getString("review"),
-                    review.rating().getStars(), review.comments()));
+            txt.append(formatter.formatReview(review));
 
             txt.append("\n");
         }
 
         if (reviews.isEmpty()) {
-            txt.append(resource.getString("no.reviews"));
+            txt.append(formatter.getText("no.reviews"));
             txt.append("\n");
         }
 
         System.out.println(txt);
     }
+
+
+
 
 }
