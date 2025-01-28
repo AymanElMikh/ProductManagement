@@ -40,10 +40,12 @@ public class Shop {
         Product p1 = productManager.createProduct(1, "Bob", BigDecimal.valueOf(123.22), Rating.NOT_RATED, LocalDate.now().plusMonths(3).plusDays(2));
 
 
-        productManager.reviewProduct(p1, "This is delicious food", Rating.FOUR_STAR);
-        productManager.reviewProduct(p1, "Hmmm delicious", Rating.FIVE_STAR);
+        productManager.reviewProduct(1, "This is delicious food", Rating.FOUR_STAR);
+        productManager.reviewProduct(1, "Hmmm delicious", Rating.THREE_STAR);
+        productManager.reviewProduct(1, "This cannot be cooked two time, it's magic", Rating.FIVE_STAR);
+        productManager.reviewProduct(1, "Thank you so mush", Rating.TWO_STAR);
 
-        productManager.printProductReport();
+        productManager.printProductReport(1);
     }
 
 }
