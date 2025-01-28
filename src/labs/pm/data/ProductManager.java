@@ -134,7 +134,6 @@ public class ProductManager {
         return  reviewProduct(findProduct(id), comment, rating);
     }
 
-
     public Product findProduct(int id){
 
         Product result = null;
@@ -178,6 +177,17 @@ public class ProductManager {
         System.out.println(txt);
     }
 
+    public void printProducts(Comparator<Product> sorter){
+            List<Product> productsList = new ArrayList<>(products.keySet()) ;
+            productsList.sort(sorter);
+            StringBuilder txt = new StringBuilder();
+
+            for( Product product : productsList){
+                txt.append(formatter.formatProduct(product));
+                txt.append("\n");
+            }
+            System.out.println(txt.toString());
+    }
 
 
 

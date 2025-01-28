@@ -24,6 +24,7 @@ import labs.pm.data.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Comparator;
 import java.util.Locale;
 
 
@@ -36,20 +37,19 @@ public class Shop {
     public static void main(String[] args) {
 
         ProductManager productManager =  new ProductManager("en-GB");
-
-        Product p1 = productManager.createProduct(1, "Bob", BigDecimal.valueOf(123.22), Rating.NOT_RATED, LocalDate.now().plusMonths(3).plusDays(2));
-
-
+        // Create
+        productManager.createProduct(1, "Bob", BigDecimal.valueOf(123.22), Rating.NOT_RATED, LocalDate.now().plusMonths(3).plusDays(2));
+        productManager.createProduct(2, "Marlie", BigDecimal.valueOf(124.22), Rating.NOT_RATED);
+        // Review
         productManager.reviewProduct(1, "This is delicious food", Rating.FOUR_STAR);
-        productManager.reviewProduct(1, "Hmmm delicious", Rating.THREE_STAR);
-        productManager.reviewProduct(1, "This cannot be cooked two time, it's magic", Rating.FIVE_STAR);
-        productManager.reviewProduct(1, "Thank you so mush", Rating.TWO_STAR);
+        productManager.reviewProduct(1, "Hmmm delicious", Rating.TWO_STAR);
+        productManager.reviewProduct(2, "This cannot be cooked two time, it's magic", Rating.FIVE_STAR);
+        productManager.reviewProduct(2, "Thank you so mush", Rating.THREE_STAR);
+        // Print Product
+        Comparator<Product> ratingSorter = (p1, p2) -> p2.getRating().ordinal() - p1.getRating().ordinal();
+        Comparator<Product> priceSorter = (p1, p2) -> p2.getPrice().compareTo(p1.getPrice());
 
-        productManager.printProductReport(1);
-
-        productManager.changeLocal("ru-RU");
-
-        productManager.printProductReport(1);
+        productManager.printProducts(ratingSorter.thenComparing(priceSorter).reversed());
 
     }
 
