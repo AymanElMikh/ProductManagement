@@ -26,6 +26,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.Locale;
+import java.util.function.Predicate;
 
 
 /**
@@ -39,21 +40,13 @@ public class Shop {
         ProductManager productManager =  new ProductManager("en-GB");
         // Create
         productManager.createProduct(1, "Bob", BigDecimal.valueOf(123.22), Rating.NOT_RATED, LocalDate.now().plusMonths(3).plusDays(2));
-        productManager.createProduct(2, "Marlie", BigDecimal.valueOf(124.22), Rating.NOT_RATED);
+        productManager.createProduct(2, "Marlie", BigDecimal.valueOf(1.22), Rating.NOT_RATED);
         // Review
-        productManager.reviewProduct(1, "This is delicious food", Rating.FOUR_STAR);
-        productManager.reviewProduct(1, "Hmmm delicious", Rating.TWO_STAR);
-        productManager.reviewProduct(2, "This cannot be cooked two time, it's magic", Rating.FIVE_STAR);
-        productManager.reviewProduct(2, "Thank you so mush", Rating.THREE_STAR);
-        // Print Product
-        Comparator<Product> ratingSorter = (p1, p2) -> p2.getRating().ordinal() - p1.getRating().ordinal();
-        Comparator<Product> priceSorter = (p1, p2) -> p2.getPrice().compareTo(p1.getPrice());
-
-        productManager.printProducts(ratingSorter.thenComparing(priceSorter).reversed());
-
+        productManager.reviewProduct(1, Rating.FOUR_STAR, "This is delicious food");
+        productManager.reviewProduct(1, Rating.TWO_STAR , "Hmmm delicious");
+        productManager.reviewProduct(39, Rating.FIVE_STAR, "This cannot be cooked two time, it's magic");
+        productManager.reviewProduct(2, Rating.THREE_STAR , "Thank you so mush");
+        productManager.parseReview("1, 5, This is too delicious");
+        productManager.parseProduct("F, 4, Shoes, 31.213, 5, 2000-07-22");
     }
-
-
-
-
 }
