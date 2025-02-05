@@ -20,9 +20,7 @@
 
 package labs.pm.data;
 
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.*;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -31,6 +29,7 @@ import java.nio.file.StandardOpenOption;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -229,7 +228,6 @@ public class ProductManager {
                             .filter(filter)
                             .forEach(p ->  txt.append(formatter.formatProduct(p) + '\n'));
 
-            System.out.println(txt.toString());
     }
 
 
@@ -253,12 +251,13 @@ public class ProductManager {
         Product product = null;
 
         try {
+
             Object[] values = productFormat.parse(text);
             int id = Integer.parseInt((String) values[1]);
             String name = (String) values[2];
             BigDecimal price = BigDecimal.valueOf(Double.parseDouble((String) values[3]));
             Rating rating = Rateable.convert(Integer.parseInt((String) values[4]));
-            switch ((String) values[1]){
+            switch ((String) values[0]){
                 case "D":
                     product = new Drink(id, name, price, rating);
                     break;
@@ -268,7 +267,7 @@ public class ProductManager {
             }
 
         } catch (ParseException | NumberFormatException | DateTimeParseException e) {
-            logger.log(Level.WARNING, "Error parsing review " + text, e);
+            logger.log(Level.WARNING, "Error parsing product " + text, e);
         }
 
         return product;
@@ -281,7 +280,7 @@ public class ProductManager {
 
         Path file = dataFolder.resolve(
                 MessageFormat.format(
-                        config.getString("reviews.data.file"), product.getId()
+                        config.getString("review.data.file"), product.getId()
                 )
         );
 
@@ -316,7 +315,45 @@ public class ProductManager {
             logger.log(Level.WARNING, "Error loading product " + e.getMessage());
         }
 
+
         return product;
+    }
+
+    private void dumpData(){
+        try {
+            if(Files.notExists(tempFolder)){
+                Files.createDirectory(tempFolder);
+            }
+            Path tempFile = tempFolder.resolve(
+                    MessageFormat.format(config.getString("temp.file"), Instant.now().getNano()));
+
+            try (ObjectOutputStream out = new ObjectOutputStream(
+                    Files.newOutputStream(tempFile, StandardOpenOption.CREATE)
+            )){
+                out.writeObject(products);
+                products = new HashMap<>();
+            }
+        } catch (IOException e){
+            logger.log(Level.SEVERE, "Error dumping data" + e.getMessage(), e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void restoreData(){
+
+        try {
+            Path tempFile = Files.list(tempFolder)
+                    .filter( path -> path.getFileName().toString().endsWith("tmp"))
+                    .findFirst().orElseThrow();
+            try (ObjectInputStream in = new ObjectInputStream(
+                    Files.newInputStream(tempFile, StandardOpenOption.DELETE_ON_CLOSE)
+            )){
+                products = (HashMap) in.readObject();
+            }
+
+        } catch (Exception e){
+            logger.log(Level.WARNING, "Error restoring data" + e.getMessage(), e);
+        }
     }
 
     public void loadAllData(){

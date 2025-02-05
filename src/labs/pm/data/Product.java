@@ -19,6 +19,7 @@
 
 package labs.pm.data;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Objects;
@@ -37,7 +38,7 @@ import static java.math.RoundingMode.HALF_UP;
  * @author Ayman ElMikh
  */
 
-public sealed abstract class Product implements Rateable<Product> permits Food, Drink{
+public sealed abstract class Product implements Rateable<Product>, Serializable permits Food, Drink{
 
     public static final BigDecimal DISCOUNT_RATE = BigDecimal.valueOf(0.1);
 

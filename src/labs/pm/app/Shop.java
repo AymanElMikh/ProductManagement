@@ -39,5 +39,12 @@ public class Shop {
 
         ProductManager productManager =  new ProductManager("en-GB");
 
+        productManager.printProductReport(1);
+        productManager.printProductReport(2);
+        productManager.printProductReport(3);
+        productManager.printProductReport(4);
+        productManager.printProductReport(5);
+
+
     }
 }
