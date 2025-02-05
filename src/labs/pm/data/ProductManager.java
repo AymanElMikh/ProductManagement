@@ -35,6 +35,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.FormatStyle;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,36 +47,26 @@ import java.util.stream.Collectors;
  **/
 public class ProductManager {
 
-    private static Map<String, ResourceFormatter> formatters =
+    private final ResourceBundle config = ResourceBundle.getBundle("labs.pm.data.config");
+    private final MessageFormat productFormat = new MessageFormat(config.getString("product.data.format"));
+    private final MessageFormat reviewFormat = new MessageFormat(config.getString("review.data.format"));
+    private final Path reportFolder = Path.of(config.getString("reports.folder"));
+    private final Path dataFolder = Path.of(config.getString("data.folder"));
+    private final Path tempFolder = Path.of(config.getString("temp.folder"));
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Lock readLock = lock.readLock();
+    private final Lock writeLock = lock.writeLock();
+
+    private  Map<Product, List<Review>> products = new HashMap<>();
+
+    private static final Map<String, ResourceFormatter> formatters =
             Map.of("en-GB", new ResourceFormatter(Locale.UK),
                     "en-US", new ResourceFormatter(Locale.US),
                     "ru-RU", new ResourceFormatter(Locale.of("ru", "RU")),
                     "fr-FR", new ResourceFormatter(Locale.FRANCE),
                     "zh-CN", new ResourceFormatter(Locale.CHINA));
-
-    private ResourceBundle config = ResourceBundle.getBundle("labs.pm.data.config");
-
-    private Path reportFolder = Path.of(config.getString("reports.folder"));
-    private Path dataFolder = Path.of(config.getString("data.folder"));
-    private Path tempFolder = Path.of(config.getString("temp.folder"));
-
-    private MessageFormat productFormat = new MessageFormat(config.getString("product.data.format"));
-    private MessageFormat reviewFormat = new MessageFormat(config.getString("review.data.format"));
-
-
-
-    //private ResourceFormatter formatter;
-
     private static final Logger logger = Logger.getLogger(ProductManager.class.getName());
     private static final ProductManager productManager = new ProductManager();
-
-    public static Set<String> getSupportedLocales(){
-        return formatters.keySet();
-    }
-
-    public ResourceFormatter changeLocal(String languageTag){
-        return formatters.getOrDefault(languageTag, formatters.get("en-GB"));
-    }
 
     private ProductManager(){
         loadAllData();
@@ -84,12 +76,19 @@ public class ProductManager {
         return new ProductManager();
     }
 
+    public static Set<String> getSupportedLocales(){
+        return formatters.keySet();
+    }
+
+    private ResourceFormatter changeLocal(String languageTag){
+        return formatters.getOrDefault(languageTag, formatters.get("en-GB"));
+    }
 
     private static class ResourceFormatter{
 
-        private ResourceBundle resource;
-        private DateTimeFormatter dateFormat;
-        private NumberFormat moneyFormat;
+        private final ResourceBundle resource;
+        private final DateTimeFormatter dateFormat;
+        private final NumberFormat moneyFormat;
 
         public ResourceFormatter(Locale locale){
             resource = ResourceBundle.getBundle("labs.pm.data.resources", locale);
@@ -119,139 +118,7 @@ public class ProductManager {
         }
     }
 
-    private Map<Product, List<Review>> products = new HashMap<>();
-
-    public Product createProduct(int id, String name, BigDecimal price, Rating rating, LocalDate bestBefore){
-
-        Product product = new Food(id, name, price, rating, bestBefore);
-        products.putIfAbsent(product, new ArrayList<Review>());
-        return product;
-    }
-
-    public  Product createProduct(int id, String name, BigDecimal price, Rating rating){
-
-        Product product = new Drink(id, name, price, rating);
-        products.putIfAbsent(product, new ArrayList<>());
-        return product;
-
-    }
-
-    public Product reviewProduct(Product product, Rating rating, String comment){
-
-        List<Review> reviews = products.get(product);
-        products.remove(product);
-        reviews.add(new Review(rating, comment));
-
-
-        product = product.applyRating(Rateable.
-                convert(
-                    (int) Math.round(
-                        reviews.stream()
-                                .mapToInt(r -> r.rating().ordinal())
-                                .average()
-                                .orElse(0)
-                )));
-
-        products.put(product, reviews);
-
-        return product;
-    }
-
-    public Product reviewProduct(int id, Rating rating,String comment){
-        try {
-            return  reviewProduct(findProduct(id), rating, comment);
-        } catch (ProductManagerException e) {
-            logger.log(Level.INFO, e.getMessage());
-            return null;
-        }
-    }
-
-    public Product findProduct(int id) throws ProductManagerException{
-
-        return products.keySet()
-                .stream()
-                .filter( p -> p.getId() == id )
-                .findFirst()
-                .orElseThrow( () -> new ProductManagerException("Product with id " + id + " not found"));
-    }
-
-    public void printProductReport(int id, String languageTag){
-        try {
-            printProductReport(findProduct(id), languageTag);
-        } catch (ProductManagerException e) {
-            logger.log(Level.INFO, e.getMessage());
-        } catch (IOException e){
-            logger.log(Level.SEVERE, "Error printing report"+ e.getMessage(), e);
-        }
-    }
-
-    public void printProductReport(Product product, String languageTag) throws IOException {
-
-        ResourceFormatter formatter = changeLocal(languageTag);
-        List<Review> reviews = products.get(product);
-        Collections.sort(reviews);
-
-        Path productFile = reportFolder.resolve(
-                MessageFormat.format(config.getString("report.file"), product.getId())
-        );
-
-        try (PrintWriter out = new PrintWriter(
-                new OutputStreamWriter(
-                Files.newOutputStream(
-                        productFile, StandardOpenOption.CREATE),"UTF-8"
-        ))) {
-
-            out.append(formatter.formatProduct(product)+System.lineSeparator());
-
-            if (reviews.isEmpty()) {
-                out.append(formatter.getText("no.reviews")+System.lineSeparator());
-
-
-            } else {
-
-                out.append(reviews.stream()
-                        .map(r -> formatter.formatReview(r)+System.lineSeparator())
-                        .collect(Collectors.joining())
-                );
-
-            }
-        }
-
-    }
-
-    public void printProducts(Predicate<Product> filter, Comparator<Product> sorter, String languageTag){
-
-        ResourceFormatter formatter = changeLocal(languageTag);
-
-            List<Product> productsList = new ArrayList<>(products.keySet()) ;
-            productsList.sort(sorter);
-            StringBuilder txt = new StringBuilder();
-
-                    productsList
-                            .stream()
-                            .sorted(sorter)
-                            .filter(filter)
-                            .forEach(p ->  txt.append(formatter.formatProduct(p) + '\n'));
-
-    }
-
-
-    public Review parseReview(String text){
-
-        Review review = null;
-
-        try {
-            Object[] values = reviewFormat.parse(text);
-            review = new Review( Rateable.convert(Integer.parseInt((String) values[0])),
-                                (String)values[1] );
-        } catch (ParseException | NumberFormatException e) {
-            logger.log(Level.WARNING, "Error parsing review " + text, e);
-        }
-
-        return review;
-    }
-
-    public Product parseProduct(String text){
+    private Product parseProduct(String text){
 
         Product product = null;
 
@@ -277,6 +144,35 @@ public class ProductManager {
 
         return product;
 
+    }
+
+    private Review parseReview(String text){
+
+        Review review = null;
+
+        try {
+            Object[] values = reviewFormat.parse(text);
+            review = new Review( Rateable.convert(Integer.parseInt((String) values[0])),
+                                (String)values[1] );
+        } catch (ParseException | NumberFormatException e) {
+            logger.log(Level.WARNING, "Error parsing review " + text, e);
+        }
+
+        return review;
+    }
+
+    private Product loadProduct(Path file){
+        Product product = null;
+
+        try {
+            product = parseProduct(
+                    Files.lines(dataFolder.resolve(file), Charset.forName("UTF-8")).findFirst().orElseThrow());
+        } catch (Exception e){
+            logger.log(Level.WARNING, "Error loading product " + e.getMessage());
+        }
+
+
+        return product;
     }
 
     private List<Review> loadReviews(Product product) {
@@ -310,18 +206,22 @@ public class ProductManager {
         return reviews;
     }
 
-    private Product loadProduct(Path file){
-        Product product = null;
-
+    private void loadAllData(){
         try {
-            product = parseProduct(
-                    Files.lines(dataFolder.resolve(file), Charset.forName("UTF-8")).findFirst().orElseThrow());
+            products = Files
+                    .list(dataFolder)
+                    .filter(
+                            file -> file.getFileName().toString().startsWith("product")
+                    )
+                    .map(
+                            file -> loadProduct(file)
+                    )
+                    .filter( product -> product != null)
+                    .collect( Collectors.toMap(product -> product, product -> loadReviews(product)));
         } catch (Exception e){
-            logger.log(Level.WARNING, "Error loading product " + e.getMessage());
+            logger.log(Level.WARNING, "Error Loading products" + e.getMessage(), e);
         }
 
-
-        return product;
     }
 
     private void dumpData(){
@@ -361,23 +261,22 @@ public class ProductManager {
         }
     }
 
-    public void loadAllData(){
+    private Product findProduct(int id) throws ProductManagerException{
         try {
-            products = Files
-                    .list(dataFolder)
-                    .filter(
-                            file -> file.getFileName().toString().startsWith("product")
-                    )
-                    .map(
-                            file -> loadProduct(file)
-                    )
-                    .filter( product -> product != null)
-                    .collect( Collectors.toMap(product -> product, product -> loadReviews(product)));
-        } catch (Exception e){
-            logger.log(Level.WARNING, "Error Loading products" + e.getMessage(), e);
+            readLock.lock();
+            return products.keySet()
+                    .stream()
+                    .filter( p -> p.getId() == id )
+                    .findFirst()
+                    .orElseThrow( () -> new ProductManagerException("Product with id " + id + " not found"));
+        } finally {
+            readLock.unlock();
         }
 
+
     }
+
+    // Public Read Methods
 
     public Map<String, String> getDiscounts(String languageTag){
 
@@ -395,6 +294,150 @@ public class ProductManager {
                                 )
                         )
                 );
+    }
+
+    public StringBuilder printProducts(Predicate<Product> filter, Comparator<Product> sorter, String languageTag){
+
+        StringBuilder txt = new StringBuilder();
+
+        try {
+            readLock.lock();
+            ResourceFormatter formatter = changeLocal(languageTag);
+            products.keySet()
+                    .stream()
+                    .sorted(sorter)
+                    .filter(filter)
+                    .forEach( p ->  txt.append(formatter.formatProduct(p) + '\n'));
+        } catch (Exception e){
+            logger.log(Level.WARNING, "Error printing product" + e.getMessage(), e);
+        }
+        finally {
+            readLock.unlock();
+        }
+
+        return txt;
+
+    }
+
+    public void printProductReport(int id, String languageTag, String client){
+
+        try {
+            readLock.lock();
+            printProductReport(findProduct(id), languageTag, client);
+        } catch (ProductManagerException e) {
+            logger.log(Level.INFO, e.getMessage());
+        } catch (IOException e){
+            logger.log(Level.SEVERE, "Error printing report"+ e.getMessage(), e);
+        } finally {
+            readLock.unlock();
+        }
+
+    }
+
+    private void printProductReport(Product product, String languageTag, String client) throws IOException {
+
+        ResourceFormatter formatter = changeLocal(languageTag);
+        List<Review> reviews = products.get(product);
+        Collections.sort(reviews);
+
+        Path productFile = reportFolder.resolve(
+                MessageFormat.format(config.getString("report.file"), product.getId(), client)
+        );
+
+        try (PrintWriter out = new PrintWriter(
+                new OutputStreamWriter(
+                        Files.newOutputStream(
+                                productFile, StandardOpenOption.CREATE),"UTF-8"
+                ))) {
+
+            out.append(formatter.formatProduct(product)+System.lineSeparator());
+
+            if (reviews.isEmpty()) {
+                out.append(formatter.getText("no.reviews")+System.lineSeparator());
+
+
+            } else {
+
+                out.append(reviews.stream()
+                        .map(r -> formatter.formatReview(r)+System.lineSeparator())
+                        .collect(Collectors.joining())
+                );
+
+            }
+        }
+
+    }
+
+    // Public Write methods
+
+    public Product reviewProduct(int id, Rating rating,String comment){
+
+        try {
+            writeLock.lock();
+            return  reviewProduct(findProduct(id), rating, comment);
+        } catch (ProductManagerException e) {
+            logger.log(Level.INFO, e.getMessage());
+            return null;
+        }finally {
+            writeLock.unlock();
+        }
+
+    }
+
+    private Product reviewProduct(Product product, Rating rating, String comment){
+
+        List<Review> reviews = products.get(product);
+        products.remove(product);
+        reviews.add(new Review(rating, comment));
+
+        product = product.applyRating(Rateable.
+                convert(
+                        (int) Math.round(
+                                reviews.stream()
+                                        .mapToInt(r -> r.rating().ordinal())
+                                        .average()
+                                        .orElse(0)
+                        )));
+
+        products.put(product, reviews);
+
+        return product;
+    }
+
+    public Product createProduct(int id, String name, BigDecimal price, Rating rating, LocalDate bestBefore){
+
+        Product product = null;
+        try {
+            writeLock.lock();
+            product = new Food(id, name, price, rating, bestBefore);
+            products.putIfAbsent(product, new ArrayList<Review>());
+        } catch (Exception e){
+            logger.log(Level.INFO, "Error adding product " + e.getMessage());
+            return null;
+        } finally {
+            writeLock.unlock();
+        }
+
+        return product;
+    }
+
+    public  Product createProduct(int id, String name, BigDecimal price, Rating rating){
+
+        Product product = null;
+
+        try{
+            writeLock.lock();;
+            product = new Drink(id, name, price, rating);
+            products.putIfAbsent(product, new ArrayList<>());
+        } catch (Exception e){
+            logger.log(Level.WARNING, "Error adding product " + e.getMessage());
+            return null;
+        }  finally {
+            writeLock.unlock();
+        }
+
+        return product;
+
     }
 
 }
