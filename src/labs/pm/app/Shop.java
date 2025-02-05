@@ -38,17 +38,6 @@ public class Shop {
     public static void main(String[] args) {
 
         ProductManager productManager =  new ProductManager("en-GB");
-        // Create
-        productManager.createProduct(1, "Bob", BigDecimal.valueOf(123.22), Rating.NOT_RATED, LocalDate.now().plusMonths(3).plusDays(2));
-        productManager.createProduct(2, "Marlie", BigDecimal.valueOf(1.22), Rating.NOT_RATED);
-        // Review
-        productManager.reviewProduct(1, Rating.FOUR_STAR, "This is delicious food");
-        productManager.reviewProduct(1, Rating.TWO_STAR , "Hmmm delicious");
-        productManager.reviewProduct(39, Rating.FIVE_STAR, "This cannot be cooked two time, it's magic");
-        productManager.reviewProduct(2, Rating.THREE_STAR , "Thank you so mush");
-        productManager.parseReview("1, 5, This is too delicious");
-        productManager.parseProduct("F, 4, Shoes, 31.213, 5, 2000-07-22");
 
-        productManager.printProductReport(1);
     }
 }
