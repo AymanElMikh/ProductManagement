@@ -48,5 +48,7 @@ public class Shop {
         productManager.reviewProduct(2, Rating.THREE_STAR , "Thank you so mush");
         productManager.parseReview("1, 5, This is too delicious");
         productManager.parseProduct("F, 4, Shoes, 31.213, 5, 2000-07-22");
+
+        productManager.printProductReport(1);
     }
 }
