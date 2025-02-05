@@ -37,13 +37,8 @@ import java.util.function.Predicate;
 public class Shop {
     public static void main(String[] args) {
 
-        ProductManager productManager =  new ProductManager("en-GB");
+        ProductManager productManager =  ProductManager.getInstance();
 
-        productManager.printProductReport(1);
-        productManager.printProductReport(2);
-        productManager.printProductReport(3);
-        productManager.printProductReport(4);
-        productManager.printProductReport(5);
 
 
     }
